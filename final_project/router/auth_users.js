@@ -42,16 +42,14 @@ regd_users.post("/login", (req,res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-    console.log("Inside PUT /auth/review/:isbn route");
+    console.log("Request Headers: ", req.headers);
 
-    const { isbn } = req.params;
-    const { review } = req.query;
-
-    let token = req.session?.token;
-    if (!token && req.headers.authorization) {
+    // Extract token from Authorization header
+    let token;
+    if (req.headers.authorization) {
         const parts = req.headers.authorization.split(" ");
         if (parts.length === 2 && parts[0] === "Bearer") {
-            token = parts[1];
+            token = parts[1]; // Extract the token
         }
     }
 
@@ -61,6 +59,7 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
         return res.status(401).json({ message: "Unauthorized: No token provided" });
     }
 
+    // Verify the token
     jwt.verify(token, "fingerprint_customer", (err, decoded) => {
         if (err) {
             console.error("JWT Verification Error: ", err.message);
@@ -70,8 +69,10 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
         console.log("Decoded JWT: ", decoded);
 
         const username = decoded.username;
-        const book = books[isbn];
+        const { isbn } = req.params;
+        const { review } = req.query;
 
+        const book = books[isbn];
         if (!book) {
             return res.status(404).json({ message: "Book not found" });
         }
